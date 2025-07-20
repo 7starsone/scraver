@@ -45,7 +45,8 @@ module.exports = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.status(500).send('The server encountered an error while scraping the page: ' + error.message);
+        // Miglioramento: usiamo String(error) per catturare anche errori non standard
+        res.status(500).send('The server encountered an error while scraping the page: ' + String(error));
     } finally {
         if (browser !== null) {
             await browser.close();
