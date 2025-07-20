@@ -1,0 +1,15 @@
+{
+  "name": "ffa-scrape-service",
+  "version": "1.0.0",
+  "description": "A simple scraping microservice for the Feed Fusion Autoposter plugin.",
+  "main": "api/scrape.js",
+  "scripts": {
+    "start": "node api/scrape.js"
+  },
+  "author": "Kings",
+  "license": "ISC",
+  "dependencies": {
+    "chrome-aws-lambda": "^10.1.0",
+    "puppeteer-core": "^10.4.0"
+  }
+}
