@@ -1,41 +1,29 @@
-// Importiamo le librerie potenziate, inclusa quella nuova e corretta
-const chromium = require('@sparticuz/chromium');
-const puppeteer = require('puppeteer-core');
-const puppeteerExtra = require('puppeteer-extra');
+const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 
-// Applichiamo il plugin "stealth" a puppeteer-extra
-puppeteerExtra.use(StealthPlugin());
+puppeteer.use(StealthPlugin());
 
 module.exports = async (req, res) => {
     const urlToScrape = req.query.url;
+    const apiKey = req.query.apiKey; // Riceviamo la chiave API dell'utente
 
-    if (!urlToScrape) {
-        return res.status(400).send('Please provide a URL to scrape.');
+    if (!urlToScrape || !apiKey) {
+        return res.status(400).send('URL and apiKey parameters are required.');
     }
 
     let browser = null;
     try {
-        // Carichiamo un font di default. Questo è un trucco comune per stabilizzare
-        // il rendering del browser in ambienti serverless.
-        await chromium.font('https://raw.githack.com/googlei18n/noto-cjk/main/NotoSansCJK-Regular.ttc');
+        // Costruiamo l'URL di connessione al browser remoto di Browserless.io
+        const browserWSEndpoint = `wss://chrome.browserless.io?token=${apiKey}`;
 
-        // Usiamo puppeteer-extra per lanciare il browser, ma con la configurazione
-        // fornita dalla nostra nuova libreria @sparticuz/chromium
-        browser = await puppeteerExtra.launch({
-            args: chromium.args,
-            defaultViewport: chromium.defaultViewport,
-            executablePath: await chromium.executablePath(),
-            headless: chromium.headless,
-            ignoreHTTPSErrors: true,
-        });
+        // Ci connettiamo al browser remoto invece di lanciarne uno locale
+        browser = await puppeteer.connect({ browserWSEndpoint });
 
         const page = await browser.newPage();
         
-        // Andiamo alla pagina. Il timeout è aumentato per sicurezza.
         await page.goto(urlToScrape, { 
-            waitUntil: 'networkidle0',
-            timeout: 25000 
+            waitUntil: 'networkidle2',
+            timeout: 30000 
         });
 
         const content = await page.content();
@@ -45,11 +33,11 @@ module.exports = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        // Miglioramento: usiamo String(error) per catturare anche errori non standard
         res.status(500).send('The server encountered an error while scraping the page: ' + String(error));
     } finally {
         if (browser !== null) {
-            await browser.close();
+            // Chiudiamo la connessione
+            await browser.disconnect();
         }
     }
 };
