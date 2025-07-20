@@ -1,10 +1,11 @@
-// Importiamo le librerie potenziate
-const puppeteer = require('puppeteer-extra');
+// Importiamo le librerie potenziate, inclusa quella nuova e corretta
+const chromium = require('@sparticuz/chromium');
+const puppeteer = require('puppeteer-core');
+const puppeteerExtra = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-const chrome = require('chrome-aws-lambda');
 
-// Applichiamo il plugin "stealth" per rendere il browser invisibile
-puppeteer.use(StealthPlugin());
+// Applichiamo il plugin "stealth" a puppeteer-extra
+puppeteerExtra.use(StealthPlugin());
 
 module.exports = async (req, res) => {
     const urlToScrape = req.query.url;
@@ -15,19 +16,26 @@ module.exports = async (req, res) => {
 
     let browser = null;
     try {
-        // Usiamo la stessa configurazione di prima, ma con il nostro puppeteer "stealth"
-        browser = await puppeteer.launch({
-            args: chrome.args,
-            executablePath: await chrome.executablePath,
-            headless: chrome.headless,
+        // Carichiamo un font di default. Questo è un trucco comune per stabilizzare
+        // il rendering del browser in ambienti serverless.
+        await chromium.font('https://raw.githack.com/googlei18n/noto-cjk/main/NotoSansCJK-Regular.ttc');
+
+        // Usiamo puppeteer-extra per lanciare il browser, ma con la configurazione
+        // fornita dalla nostra nuova libreria @sparticuz/chromium
+        browser = await puppeteerExtra.launch({
+            args: chromium.args,
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath(),
+            headless: chromium.headless,
+            ignoreHTTPSErrors: true,
         });
 
         const page = await browser.newPage();
         
-        // Andiamo alla pagina. Il plugin stealth gestirà tutti gli header e le impronte.
+        // Andiamo alla pagina. Il timeout è aumentato per sicurezza.
         await page.goto(urlToScrape, { 
-            waitUntil: 'networkidle0', // Aspettiamo che la rete sia completamente inattiva
-            timeout: 15000 // Aumentiamo leggermente il timeout a 15 secondi per sicurezza
+            waitUntil: 'networkidle0',
+            timeout: 25000 
         });
 
         const content = await page.content();
