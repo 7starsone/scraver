@@ -1,44 +1,31 @@
-const puppeteer = require('puppeteer-core');
-const chrome = require('chrome-aws-lambda');
+// Non usiamo più Puppeteer, ma una libreria HTTP leggera
+const axios = require('axios');
 
-// Funzione principale che Vercel eseguirà
 module.exports = async (req, res) => {
-    // Ottieni l'URL da visitare dalla query string (es. /api/scrape?url=https://...)
-    const urlToScrape = req.query.url;
+    const urlToFetch = req.query.url;
 
-    if (!urlToScrape) {
-        return res.status(400).send('Please provide a URL to scrape.');
+    if (!urlToFetch) {
+        return res.status(400).json({ error: 'Please provide a URL parameter.' });
     }
 
-    let browser = null;
     try {
-        // Lancia un'istanza di browser headless ottimizzata per ambienti serverless
-        browser = await puppeteer.launch({
-            args: chrome.args,
-            executablePath: await chrome.executablePath,
-            headless: chrome.headless,
+        // Esegui una semplice richiesta GET, ma con uno User-Agent da browser
+        const response = await axios.get(urlToFetch, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'
+            }
         });
 
-        const page = await browser.newPage();
-        
-        // Imposta uno user agent realistico
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36');
-
-        // Naviga alla pagina
-        await page.goto(urlToScrape, { waitUntil: 'networkidle2' });
-
-        // Estrai il contenuto HTML della pagina
-        const content = await page.content();
-        
-        // Invia l'HTML come risposta
-        res.status(200).send(content);
+        // Invia il contenuto della risposta (l'XML del feed)
+        // Imposta l'header corretto per far capire che è XML
+        res.setHeader('Content-Type', 'application/xml');
+        res.status(200).send(response.data);
 
     } catch (error) {
         console.error(error);
-        res.status(500).send('The server encountered an error while scraping the page.');
-    } finally {
-        if (browser !== null) {
-            await browser.close();
-        }
+        // Se c'è un errore, restituisci un messaggio più specifico
+        const statusCode = error.response ? error.response.status : 500;
+        const message = error.message || 'An error occurred while fetching the URL.';
+        res.status(statusCode).json({ error: message });
     }
 };
