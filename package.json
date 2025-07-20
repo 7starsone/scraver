@@ -1,14 +1,14 @@
 {
   "name": "ffa-scrape-service",
   "version": "1.0.0",
-  "description": "A simple and lightweight fetching microservice for the Feed Fusion Autoposter plugin.",
+  "description": "A powerful, stealthy scraping microservice for the Feed Fusion Autoposter plugin.",
   "main": "api/scrape.js",
-  "scripts": {
-    "start": "node api/scrape.js"
-  },
   "author": "Kings",
   "license": "ISC",
   "dependencies": {
-    "axios": "^1.4.0"
+    "chrome-aws-lambda": "^10.1.0",
+    "puppeteer-core": "^10.4.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
 }
