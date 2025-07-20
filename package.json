@@ -1,12 +1,13 @@
 {
-  "name": "ffa-scrape-controller",
+  "name": "ffa-scrape-service",
   "version": "1.0.0",
-  "description": "A lightweight controller for the Browserless.io engine.",
+  "description": "A powerful, stealthy scraping microservice for the Feed Fusion Autoposter plugin.",
   "main": "api/scrape.js",
-  "author": "kINGS",
+  "author": "kings",
   "license": "ISC",
   "dependencies": {
-    "puppeteer-core": "^21.5.0",
+    "@sparticuz/chromium": "119.0.0",
+    "puppeteer-core": "21.5.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
